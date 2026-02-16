@@ -1,65 +1,33 @@
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
-from typing import List, Optional
-from app.services.workout_service import WorkoutService
+from fastapi import APIRouter
+from typing import Optional
 
 router = APIRouter()
-workout_service = WorkoutService()
 
-class MoodWorkoutRequest(BaseModel):
-    mood: str
-    duration: int
-    fitness_level: str = "intermediate"
+@router.get("/recipes")
+async def get_recipes(goal: str, restrictions: Optional[str] = ""):
+    # This logic ensures different recipes for different goals
+    if goal == "weight_loss":
+        recipes = [{"name": "Lean Green Salad", "calories": 250, "prep_time": 10, "servings": 1, "icon": "🥗", "dietary_tags": ["Vegan"]}]
+    elif goal == "muscle_gain":
+        recipes = [{"name": "Steak & Sweet Potato", "calories": 700, "prep_time": 25, "servings": 1, "icon": "🥩", "dietary_tags": ["High Protein"]}]
+    else:
+        recipes = [{"name": "Balanced Buddha Bowl", "calories": 450, "prep_time": 15, "servings": 1, "icon": "🥣", "dietary_tags": ["Healthy"]}]
+    return {"recipes": recipes}
 
-class Exercise(BaseModel):
-    name: str
-    reps: Optional[str] = None
-    sets: Optional[int] = None
+@router.get("/meal-plan")
+async def get_meal_plan(goal: str, restrictions: Optional[str] = "", days: int = 7):
+    plan = []
+    for i in range(1, days + 1):
+        plan.append({
+            "day": i,
+            "day_name": f"Day {i}",
+            "total_calories": 2000,
+            "meals": [{"meal_type": "Lunch", "name": "Chicken Wrap", "calories": 500, "icon": "🌯"}],
+            "tips": "Stay hydrated!"
+        })
+    return {"meal_plan": plan}
 
-class Workout(BaseModel):
-    name: str
-    description: str
-    duration: int
-    calories: int
-    difficulty: str
-    difficulty_icon: str
-    icon: str
-    exercises: List[str]
-    video_url: Optional[str] = None
-    image_url: Optional[str] = None
-
-class WorkoutResponse(BaseModel):
-    workouts: List[Workout]
-    mood: str
-    duration: int
-
-@router.post("/mood-based", response_model=WorkoutResponse)
-async def get_mood_based_workouts(request: MoodWorkoutRequest):
-    """
-    Get personalized workouts based on mood, duration, and fitness level
-    """
-    try:
-        workouts = workout_service.get_workouts_by_mood(
-            mood=request.mood,
-            duration=request.duration,
-            fitness_level=request.fitness_level
-        )
-        
-        return {
-            "workouts": workouts,
-            "mood": request.mood,
-            "duration": request.duration
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@router.get("/", response_model=List[Workout])
-async def get_all_workouts():
-    """
-    Get all available workouts
-    """
-    try:
-        workouts = workout_service.get_all_workouts()
-        return workouts
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+@router.get("/healthy-swaps")
+async def get_swaps(craving: str):
+    swaps = {"sweet": [{"name": "Dark Chocolate", "icon": "🍫"}], "salty": [{"name": "Roasted Nuts", "icon": "🥜"}]}
+    return {"swaps": swaps.get(craving.lower(), [])}

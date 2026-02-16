@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import Navbar from '@/components/Navbar';
+import Navbar from '../components/Navbar';
 import { authAPI } from '@/lib/api';
 
 export default function DashboardPage() {
@@ -183,3 +183,4 @@ export default function DashboardPage() {
     </main>
   );
 }
+
