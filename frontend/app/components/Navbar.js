@@ -2,7 +2,8 @@
 
 import { useRouter, usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { authAPI } from '@/lib/api'; // FIXED PATH
+import { LayoutDashboard, Dumbbell, Utensils, LogOut } from 'lucide-react';
+import { authAPI } from '@/lib/api';
 
 export default function Navbar() {
   const router = useRouter();
@@ -14,37 +15,48 @@ export default function Navbar() {
   };
 
   const navLinks = [
-    { path: '/dashboard', label: 'Dashboard', icon: '🏠' },
-    { path: '/workouts', label: 'Workouts', icon: '💪' },
-    { path: '/nutrition', label: 'Nutrition', icon: '🥗' },
+    { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { path: '/workouts', label: 'Workouts', icon: Dumbbell },
+    { path: '/nutrition', label: 'Nutrition', icon: Utensils },
   ];
 
   return (
-    <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
+    <nav className="sticky top-0 z-50 bg-white border-b border-gray-100 shadow-sm">
       <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
         <motion.div 
-          whileHover={{ scale: 1.05 }}
+          whileHover={{ scale: 1.02 }}
           onClick={() => router.push('/dashboard')}
           className="flex items-center gap-3 cursor-pointer"
         >
-          <div className="w-10 h-10 rounded-full bg-orange-500 flex items-center justify-center text-white font-bold shadow-lg">F</div>
-          <h1 className="text-2xl font-bold text-orange-600 hidden sm:block">FitMood</h1>
+          <div className="w-9 h-9 rounded-lg bg-[#1F2937] flex items-center justify-center text-white font-bold shadow-sm">F</div>
+          <h1 className="text-xl font-bold text-[#1F2937] tracking-tight hidden sm:block">FitMood</h1>
         </motion.div>
 
-        <div className="flex gap-2">
-          {navLinks.map((link) => (
-            <button
-              key={link.path}
-              onClick={() => router.push(link.path)}
-              className={`px-4 py-2 rounded-xl font-semibold transition-all ${
-                pathname === link.path ? 'bg-orange-500 text-white shadow-md' : 'text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              <span className="mr-2">{link.icon}</span>
-              <span className="hidden sm:inline">{link.label}</span>
-            </button>
-          ))}
-          <button onClick={handleLogout} className="px-4 py-2 text-red-600 font-semibold hover:bg-red-50 rounded-xl transition-all">Logout</button>
+        <div className="flex items-center gap-1">
+          {navLinks.map((link) => {
+            const Icon = link.icon;
+            const isActive = pathname === link.path;
+            return (
+              <button
+                key={link.path}
+                onClick={() => router.push(link.path)}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all duration-200 ${
+                  isActive ? 'bg-[#FB923C] text-white shadow-md' : 'text-[#6B7280] hover:bg-gray-50'
+                }`}
+              >
+                <Icon size={14} />
+                <span className="hidden md:inline">{link.label}</span>
+              </button>
+            );
+          })}
+          <div className="h-6 w-[1px] bg-gray-100 mx-2 hidden sm:block"></div>
+          <button 
+            onClick={handleLogout} 
+            className="flex items-center gap-2 px-3 py-2 text-[#6B7280] hover:text-red-500 transition-colors text-[11px] font-bold uppercase tracking-widest"
+          >
+            <LogOut size={14} />
+            <span className="hidden sm:inline">Logout</span>
+          </button>
         </div>
       </div>
     </nav>

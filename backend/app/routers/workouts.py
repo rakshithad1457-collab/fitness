@@ -1,65 +1,65 @@
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
-from typing import List, Optional
-from app.services.workout_service import WorkoutService
+from pydantic import BaseModel, Field
+from typing import Optional
+from app.services.workout_service import get_mood_workout
 
-router = APIRouter()
-workout_service = WorkoutService()
+router = APIRouter(tags=["workout"])
 
-class MoodWorkoutRequest(BaseModel):
+
+class WorkoutRequest(BaseModel):
     mood: str
-    duration: int
-    fitness_level: str = "intermediate"
+    available_time: int
 
-class Exercise(BaseModel):
-    name: str
-    reps: Optional[str] = None
-    sets: Optional[int] = None
 
-class Workout(BaseModel):
-    name: str
-    description: str
-    duration: int
-    calories: int
-    difficulty: str
-    difficulty_icon: str
-    icon: str
-    exercises: List[str]
-    video_url: Optional[str] = None
-    image_url: Optional[str] = None
+class CaloriesBurned(BaseModel):
+    per_exercise_total: int
+    estimated_range: str
+    note: str
+
 
 class WorkoutResponse(BaseModel):
-    workouts: List[Workout]
     mood: str
-    duration: int
+    title: str
+    description: str
+    duration_minutes: int
+    exercises: list[dict]
+    calories_burned: Optional[CaloriesBurned] = None
+    youtube_url: str
+    youtube_query: str
 
+
+# POST /api/workouts/mood-based
 @router.post("/mood-based", response_model=WorkoutResponse)
-async def get_mood_based_workouts(request: MoodWorkoutRequest):
-    """
-    Get personalized workouts based on mood, duration, and fitness level
-    """
-    try:
-        workouts = workout_service.get_workouts_by_mood(
-            mood=request.mood,
-            duration=request.duration,
-            fitness_level=request.fitness_level
-        )
-        
-        return {
-            "workouts": workouts,
-            "mood": request.mood,
-            "duration": request.duration
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+async def generate_workout(request: WorkoutRequest):
+    mood = request.mood.lower().strip()
+    available_time = request.available_time
 
-@router.get("/", response_model=List[Workout])
-async def get_all_workouts():
-    """
-    Get all available workouts
-    """
-    try:
-        workouts = workout_service.get_all_workouts()
-        return workouts
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    if available_time < 5:
+        raise HTTPException(status_code=400, detail="Available time must be at least 5 minutes.")
+
+    valid_moods = ["happy", "stressed", "tired", "energetic", "anxious", "sad", "neutral", "motivated"]
+    if mood not in valid_moods:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Mood '{mood}' is not supported. Choose from: {', '.join(valid_moods)}"
+        )
+
+    workout = get_mood_workout(mood, available_time)
+    return workout
+
+
+# GET /api/workouts/moods
+@router.get("/moods")
+async def list_supported_moods():
+    return {
+        "moods": [
+            {"value": "happy",     "label": "Happy 😊",       "description": "Upbeat cardio & dance workouts"},
+            {"value": "stressed",  "label": "Stressed 😤",    "description": "Yoga & breathing exercises"},
+            {"value": "tired",     "label": "Tired 😴",       "description": "Gentle stretching & low-impact"},
+            {"value": "energetic", "label": "Energetic ⚡",   "description": "HIIT & power training"},
+            {"value": "anxious",   "label": "Anxious 😰",     "description": "Mindful movement & meditation"},
+            {"value": "sad",       "label": "Sad 😢",         "description": "Feel-good endorphin boosters"},
+            {"value": "neutral",   "label": "Neutral 😐",     "description": "Balanced full-body workout"},
+            {"value": "motivated", "label": "Motivated 💪",   "description": "Strength & performance training"},
+        ]
+    }
