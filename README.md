@@ -1,2 +1,3 @@
 # fitnessapp
-mobile application
+web application
+
