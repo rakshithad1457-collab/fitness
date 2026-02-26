@@ -1,28 +1,44 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Zap, Moon, Wind, Trophy, Smile, Clock, Dumbbell, Flame, ExternalLink } from 'lucide-react';
+import {
+  Zap, Moon, Wind, Trophy, Smile,
+  Clock, Dumbbell, Flame, ExternalLink, Info,
+} from 'lucide-react';
 import Navbar from '../components/Navbar';
 import { authAPI, workoutAPI } from '@/lib/api';
 
 const MOODS = [
   { id: 'energetic', label: 'Energetic', icon: Zap },
-  { id: 'tired', label: 'Tired', icon: Moon },
-  { id: 'stressed', label: 'Stressed', icon: Wind },
+  { id: 'tired',     label: 'Tired',     icon: Moon },
+  { id: 'stressed',  label: 'Stressed',  icon: Wind },
   { id: 'motivated', label: 'Motivated', icon: Trophy },
-  { id: 'happy', label: 'Happy', icon: Smile },
+  { id: 'happy',     label: 'Happy',     icon: Smile },
 ];
 
+const AGE_BADGE_COLORS = {
+  teen:        { bg: '#ECFDF5', text: '#065F46', border: '#34D399' },
+  young_adult: { bg: '#FFF7ED', text: '#92400E', border: '#FB923C' },
+  adult:       { bg: '#EFF6FF', text: '#1E40AF', border: '#60A5FA' },
+  senior:      { bg: '#F5F3FF', text: '#4C1D95', border: '#A78BFA' },
+};
+
 export default function WorkoutsPage() {
-  const router = useRouter();
-  const [user, setUser] = useState(null);
-  const [selectedMood, setSelectedMood] = useState('energetic');
+  const router       = useRouter();
+  const searchParams = useSearchParams();
+
+  const [user,             setUser]             = useState(null);
+  const [selectedMood,     setSelectedMood]     = useState('energetic');
   const [selectedDuration, setSelectedDuration] = useState(30);
-  const [workout, setWorkout] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [workout,          setWorkout]          = useState(null);
+  const [loading,          setLoading]          = useState(false);
+  const [error,            setError]            = useState(null);
+
+  // Read age_category passed from the age-select page via URL query param
+  const ageCategory = searchParams.get('age') || 'young_adult';
+  const ageBadge    = AGE_BADGE_COLORS[ageCategory] || AGE_BADGE_COLORS.young_adult;
 
   useEffect(() => {
     const currentUser = authAPI.getCurrentUser();
@@ -36,8 +52,9 @@ export default function WorkoutsPage() {
     setWorkout(null);
     try {
       const response = await workoutAPI.getWorkoutsByMood({
-        mood: selectedMood,
+        mood:           selectedMood,
         available_time: selectedDuration,
+        age_category:   ageCategory,
       });
       setWorkout(response);
     } catch (err) {
@@ -49,28 +66,55 @@ export default function WorkoutsPage() {
   };
 
   const handleYouTubeOpen = () => {
-    if (workout?.youtube_url) {
-      window.open(workout.youtube_url, '_blank');
-    }
+    if (workout?.youtube_url) window.open(workout.youtube_url, '_blank');
   };
 
   return (
     <main className="min-h-screen bg-[#F8F9FC] text-[#1F2937]">
       <Navbar />
+
       <div className="max-w-6xl mx-auto px-6 py-16">
+
+        {/* ── Header ── */}
         <header className="text-center mb-12">
           <h1 className="text-4xl font-semibold tracking-[0.05em] mb-3 text-[#1F2937]">
             OPTIMIZE YOUR <span className="text-[#FB923C]">SESSION</span>
           </h1>
-          <p className="text-[#6B7280] font-medium tracking-wide uppercase text-[10px]">
+          <p className="text-[#6B7280] font-medium tracking-wide uppercase text-[10px] mb-4">
             Select state to initialize protocol
           </p>
+
+          {/* Age group pill */}
+          <div className="flex items-center justify-center gap-2">
+            <span
+              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-widest border"
+              style={{
+                background:   ageBadge.bg,
+                color:        ageBadge.text,
+                borderColor:  ageBadge.border,
+              }}
+            >
+              {ageCategory.replace('_', ' ')}
+              <span className="opacity-60 font-normal normal-case tracking-normal">
+                · Workouts calibrated for your age
+              </span>
+            </span>
+
+            {/* Tap to go back and change age */}
+            <button
+              onClick={() => router.push('/select-age')}
+              title="Change age group"
+              className="text-[#9CA3AF] hover:text-[#6B7280] transition-colors"
+            >
+              <Info size={14} />
+            </button>
+          </div>
         </header>
 
-        {/* Mood Selector */}
+        {/* ── Mood Selector ── */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-5 mb-10">
           {MOODS.map((m) => {
-            const Icon = m.icon;
+            const Icon     = m.icon;
             const isActive = selectedMood === m.id;
             return (
               <motion.button
@@ -85,7 +129,11 @@ export default function WorkoutsPage() {
                 }`}
               >
                 <Icon size={28} className={isActive ? 'text-[#FB923C]' : 'text-[#6B7280]'} />
-                <span className={`mt-4 text-[11px] font-bold uppercase tracking-widest ${isActive ? 'text-[#1F2937]' : 'text-[#6B7280]'}`}>
+                <span
+                  className={`mt-4 text-[11px] font-bold uppercase tracking-widest ${
+                    isActive ? 'text-[#1F2937]' : 'text-[#6B7280]'
+                  }`}
+                >
                   {m.label}
                 </span>
               </motion.button>
@@ -93,7 +141,7 @@ export default function WorkoutsPage() {
           })}
         </div>
 
-        {/* Duration Selector */}
+        {/* ── Duration Selector ── */}
         <div className="bg-white p-10 rounded-[2.5rem] shadow-[0_4px_12px_rgba(0,0,0,0.05)] mb-10">
           <div className="flex items-center gap-2 mb-6 text-[#1F2937]">
             <Clock size={16} />
@@ -116,7 +164,7 @@ export default function WorkoutsPage() {
           </div>
         </div>
 
-        {/* Generate Button */}
+        {/* ── Generate Button ── */}
         <motion.button
           whileHover={{ scale: 1.01 }}
           whileTap={{ scale: 0.99 }}
@@ -127,14 +175,14 @@ export default function WorkoutsPage() {
           {loading ? 'Analyzing...' : 'Initialize Workout'}
         </motion.button>
 
-        {/* Error */}
+        {/* ── Error ── */}
         {error && (
           <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm font-medium text-center">
             {error}
           </div>
         )}
 
-        {/* Workout Result */}
+        {/* ── Workout Result ── */}
         <AnimatePresence>
           {workout && (
             <motion.div
@@ -152,17 +200,29 @@ export default function WorkoutsPage() {
                     </h2>
                     <p className="text-[#6B7280] text-sm mt-1">{workout.description}</p>
                   </div>
-                  <div className="flex gap-2">
+
+                  {/* Pill badges */}
+                  <div className="flex flex-wrap gap-2 justify-end">
                     <span className="px-3 py-1 bg-[#F8F9FC] rounded-lg text-[10px] font-bold uppercase tracking-widest text-[#6B7280]">
                       {workout.duration_minutes} MIN
                     </span>
                     <span className="px-3 py-1 bg-[#FFF3CD] rounded-lg text-[10px] font-bold uppercase tracking-widest text-[#B45309]">
                       {workout.mood}
                     </span>
+                    <span
+                      className="px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest border"
+                      style={{
+                        background:  ageBadge.bg,
+                        color:       ageBadge.text,
+                        borderColor: ageBadge.border,
+                      }}
+                    >
+                      {workout.age_label}
+                    </span>
                   </div>
                 </div>
 
-                {/* Calorie Strip */}
+                {/* Calorie strip */}
                 {workout.calories_burned && (
                   <div className="flex items-center gap-3 mt-4 pt-4 border-t border-[#F1F5F9]">
                     <div className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-[#FB923C] to-[#F97316] rounded-xl shrink-0">
@@ -174,6 +234,16 @@ export default function WorkoutsPage() {
                     <span className="text-[#9CA3AF] text-[11px]">
                       {workout.calories_burned.note}
                     </span>
+                  </div>
+                )}
+
+                {/* Age-specific rest tip */}
+                {workout.rest_note && (
+                  <div className="mt-3 flex items-start gap-2 px-4 py-3 rounded-xl bg-[#F8F9FC]">
+                    <Info size={13} className="text-[#6B7280] mt-0.5 shrink-0" />
+                    <p className="text-[11px] text-[#6B7280] leading-relaxed">
+                      {workout.rest_note}
+                    </p>
                   </div>
                 )}
               </div>
@@ -224,10 +294,10 @@ export default function WorkoutsPage() {
                 <ExternalLink size={18} />
                 Watch on YouTube
               </motion.button>
-
             </motion.div>
           )}
         </AnimatePresence>
+
       </div>
     </main>
   );

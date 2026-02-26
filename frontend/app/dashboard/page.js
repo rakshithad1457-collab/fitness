@@ -8,7 +8,7 @@ import { Dumbbell, Utensils, ChefHat, ChevronRight } from 'lucide-react';
 import { authAPI } from '@/lib/api';
 
 const QUICK_ACTIONS = [
-  { title: 'Get Workout', sub: 'Mood-based training', icon: Dumbbell, path: '/workouts' },
+  { title: 'Get Workout', sub: 'Mood-based training', icon: Dumbbell, path: '/select-age' },
   { title: 'Meal Plans', sub: '7-day strategy', icon: Utensils, path: '/nutrition?tab=meal-plan' },
   { title: 'Recipes', sub: 'Personalized ideas', icon: ChefHat, path: '/nutrition?tab=recipes' },
 ];
